@@ -1,0 +1,61 @@
+#include <Adafruit_Sensor.h>
+#include <DHT.h>
+#include <DHT_U.h>
+
+#define DHTPIN 34
+#define DHTTYPE DHT22
+
+DHT_Unified dht(DHTPIN, DHTTYPE);
+
+const int trig_pin = 5;
+const int echo_pin = 21;
+#define SOUND_SPEED 340
+#define TRIG_PULSE_DURATION_US 10
+
+uint32_t delayMS;
+long ultrason_duration;
+float distance_cm;
+
+void setup() {
+  Serial.begin(9600);
+  dht.begin();
+
+  pinMode(trig_pin, OUTPUT);
+  pinMode(echo_pin, INPUT);
+
+  sensor_t sensor;
+  dht.temperature().getSensor(&sensor);
+  delayMS = sensor.min_delay / 1000;
+}
+
+void loop() {
+  // Temperature reading
+  delay(delayMS);
+  sensors_event_t temp_event;
+  dht.temperature().getEvent(&temp_event);
+  
+  // Ultrasonic reading
+  digitalWrite(trig_pin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trig_pin, HIGH);
+  delayMicroseconds(TRIG_PULSE_DURATION_US);
+  digitalWrite(trig_pin, LOW);
+  ultrason_duration = pulseIn(echo_pin, HIGH);
+  distance_cm = ultrason_duration * SOUND_SPEED / 2 * 0.0001;
+
+  // Print temperature and ultrasonic distance
+  Serial.println("Temperature Sensor Reading:");
+  if (isnan(temp_event.temperature)) {
+    Serial.println("Error reading temperature!");
+  } else {
+    Serial.print("Temperature: ");
+    Serial.print(temp_event.temperature);
+    Serial.println(" °C");
+  }
+  
+  Serial.println("Ultrasonic Sensor Reading:");
+  Serial.print("Distance (cm): ");
+  Serial.println(distance_cm);
+  
+  delay(1000);
+}
